@@ -1,0 +1,9 @@
+# to_load folders with large wav files
+*to_load/
+out/
+
+# 
+*loudness_model_Moore*
+
+# readme file with personal notes
+README
