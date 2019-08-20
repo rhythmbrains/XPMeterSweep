@@ -1,5 +1,5 @@
 
-%% Meter Sweep tapping pilot
+%% Meter Sweep EEG
 
 % -----------------------------------------------
 % CHANGELOG
@@ -7,7 +7,6 @@
 % 
 % -----------------------------------------------
 % TO DO 
-% 
 % 
 % -----------------------------------------------
 
@@ -37,24 +36,24 @@ experiment  = 'XPMeterSweep';
 % PATHS
 addpath(genpath('~/Documents/MATLAB/stimulusPresentationLib'));
 load_path   = fullfile('./to_load/XPMeterSweep_4against3.mat');
-log_path    = fullfile('.','log',log_path,sprintf('ID%d',SUBJECT)); 
+log_path    = fullfile('.','log',sprintf('ID%d',SUBJECT)); 
 if ~isdir(log_path); mkdir(log_path); end
 
 
 
 % PARAMETERS
-
 params_exp = XPMeterSweep_eeg_PTB_paramsClass;
 
 
 
 
 % SCREEN
-PsychDebugWindowConfiguration
+% PsychDebugWindowConfiguration
 screen = max(Screen('Screens'));
 blackcol = 0;
 col_text = [255,255,255];
 [win,rect] = PsychImaging('OpenWindow',screen,blackcol,[0,0,1000,500]);
+[xcenter ycenter] = RectCenter(rect);
 Screen('BlendFunction',win,'GL_SRC_ALPHA','GL_ONE_MINUS_SRC_ALPHA');
 Screen('TextSize',win,32);
 
@@ -115,13 +114,23 @@ PsychPortAudio('GetAudioData', pahandle, 120); %preallocate tapping buffer
 load(load_path)
 params_stim = params; 
 
+% get the downsampling ratio for data logging
+params_stim.fs_ds = 1000; 
+[P,Q] = rat(params_stim.fs_ds/params_stim.fs); 
 
 % set audio volume
+[thr,UD] = PTB_setVolumeUD(win, pahandle, dev_idx, ...
+    'f0',               params_exp.setVolUD_f0, ...
+    'tone_dur',         params_exp.setVolUD_tone_dur, ...
+    'start_vol',        params_exp.setVolUD_start_vol, ...
+    'step_dB',          params_exp.setVolUD_step_dB, ...
+    'stop_reversals',   params_exp.setVolUD_stop_reversals, ...
+    'reject_reversals', params_exp.setVolUD_reject_reversals); 
+
 need_gain = 20*log10((1/sqrt(2)/params_stim.rms)); % how much gain in dB do we need considering the RMS of s (and the fact that we are calibrating with unit-amplitude sinusiod)
-[thr,UD] = setVolumeUDPTB(win, pahandle, dev_idx); 
 target_vol = 10^((thr+params_exp.ptbvolume_dBSL+need_gain)/20); 
 PsychPortAudio('Volume',pahandle,target_vol); 
-
+disp(sprintf('the target volume is %3f\n\n',target_vol)); 
 
 % odd-numbered subjects will start with stimulus 1 and even-numbered subjects will start with stimulus 2 
 if mod(SUBJECT,2)
@@ -135,7 +144,7 @@ end
 
 
 
-
+%%
 
 
 
@@ -148,7 +157,7 @@ trial_order_tap1 = repmat(trial_order_type,1,params_exp.ntrials_per_rhythm_tap1)
 % draw instructions on the screen, wait for spacebar
 DrawFormattedText(win,params_exp.instr_intro_tap1,'center','center',col_text);
 Screen('Flip',win);
-waitForKey(keyspace);
+PTB_waitForKey(keyspace);
 
 
 res.data(1).session = 'tap1'; 
@@ -160,11 +169,14 @@ for triali=1:length(trial_order_tap1)
     Screen('Flip',win);
 
     % PREPARE SOUND
-    s_name = stimuli(trial_order_tap1(triali)).name; 
-    s = stimuli(trial_order_tap1(triali)).s; 
+    idx_order = find(trial_order_tap1(triali) == [params_exp.trig_codes.order_number]); 
+    s_name = params_exp.trig_codes(idx_order).name; 
+    idx2 = find(strcmp(s_name,{stimuli.name})); 
+    s = stimuli(idx2).s; 
     s_out = zeros(dev_n_channels, length(s)); 
     s_out(1,:) = s; 
     s_out(2,:) = s; 
+    s_out(5,:) = s; 
     
     PsychPortAudio('FillBuffer',pahandle,s_out);
     WaitSecs(rand(1)+1);  % wait 1-2 sec
@@ -176,21 +188,23 @@ for triali=1:length(trial_order_tap1)
     PsychPortAudio('Stop',pahandle,1); %actualStartTime is the same as returned by Start command in WaitForStart mode
 
     % SAVE tapping as audiofile
-    tapata = PsychPortAudio('GetAudioData', pahandle); 
-    tapdata = tapdata(1,:); 
+    tapdata = PsychPortAudio('GetAudioData', pahandle); 
+    tapdata = tapdata(1:2,:); 
     file_name_tap = fullfile(log_path, sprintf('%s_tappingSession1_ID%d_%s_%s_trial%d.wav', experiment, SUBJECT, date_time, s_name, triali)); 
-    audiowrite(file_name_tap, tapData', fs); 
+    audiowrite(file_name_tap, tapdata', params_stim.fs); 
 
     % SAVE tapping as matfile
-    res.data(1).trial(triali).stimulus = stimuli(trial_order_tap1(triali));
-    res.data(1).trial(triali).response = tapdata;
-
+    res.data(1).trial(triali).stimulus = resample(tapdata(2,:),P,Q);
+    res.data(1).trial(triali).response = resample(tapdata(1,:),P,Q);
+    res.data(1).trial(triali).fs = params_stim.fs_ds; 
+    res.data(1).trial(triali).condition = s_name; 
+    
     % DISPLAY message
     if triali<length(trial_order_tap1)
         to_disp = sprintf('Take a break...\n\nPress SPACE to continue...');
         DrawFormattedText(win,to_disp,'center','center',col_text);
         Screen('Flip',win);
-        waitForKey(keyspace);
+        PTB_waitForKey(keyspace);
     end
     
 end
@@ -198,6 +212,10 @@ end
 
 
 
+
+
+
+%%
 
 
 
@@ -210,7 +228,7 @@ trial_order_eeg = repmat(trial_order_type,1,params_exp.ntrials_per_rhythm_eeg);
 % draw instructions on the screen, wait for spacebar
 DrawFormattedText(win,params_exp.instr_intro_eeg,'center','center',col_text);
 Screen('Flip',win);
-waitForKey(keyspace);
+PTB_waitForKey(keyspace);
 
 
 res.data(2).session = 'eeg'; 
@@ -222,18 +240,20 @@ for triali=1:length(trial_order_eeg)
     Screen('Flip',win);
 
     % PREPARE SOUND
-    s_name = stimuli(trial_order_eeg(triali)).name; 
-    s = stimuli(trial_order_eeg(triali)).s; 
+    idx_order = find(trial_order_eeg(triali) == [params_exp.trig_codes.order_number]); 
+    s_name = params_exp.trig_codes(idx_order).name; 
+    idx2 = find(strcmp(s_name,{stimuli.name})); 
+    s = stimuli(idx2).s; 
     s_out = zeros(dev_n_channels, length(s)); 
     s_out(1,:) = s; 
     s_out(2,:) = s; 
     
     % TRIGGER
     trig = zeros(size(s)); 
-    trig(1:round(0.010*params_stim.fs)) = 1; 
-    if trial_order_eeg(triali)==1
+    trig(1:round(0.100*params_stim.fs)) = 1; 
+    if params_exp.trig_codes(idx_order).code==1
         trig_chan = 3; 
-    elseif trial_order_eeg(triali)==2
+    elseif params_exp.trig_codes(idx_order).code==2
         trig_chan = 4; 
     end
     s_out(trig_chan,:) = trig; 
@@ -246,14 +266,17 @@ for triali=1:length(trial_order_eeg)
     PsychPortAudio('Stop',pahandle,1); %actualStartTime is the same as returned by Start command in WaitForStart mode
 
     % SAVE matfile
-    res.data(2).trial(triali).stimulus = stimuli(trial_order_eeg(triali));
-    
+    res.data(2).trial(triali).stimulus = resample(s,P,Q);
+    res.data(2).trial(triali).fs = params_stim.fs_ds;
+    res.data(2).trial(triali).condition = s_name; 
+    res.data(2).trial(triali).trigger = params_exp.trig_codes(idx_order).code; 
+
     % DISPLAY message
     if triali<length(trial_order_eeg)
         to_disp = sprintf('Take a break...\n\nPress SPACE to continue...');
         DrawFormattedText(win,to_disp,'center','center',col_text);
         Screen('Flip',win);
-        waitForKey(keyspace);
+        PTB_waitForKey(keyspace);
     end
     
 end
@@ -263,7 +286,7 @@ end
 
 
 
-
+%%
 
 
 
@@ -275,9 +298,9 @@ end
 trial_order_tap2 = repmat(trial_order_type,1,params_exp.ntrials_per_rhythm_tap2); 
 
 % draw instructions on the screen, wait for spacebar
-DrawFormattedText(win,params_exp.instr_intro_tap1,'center','center',col_text);
+DrawFormattedText(win,params_exp.instr_intro_tap2,'center','center',col_text);
 Screen('Flip',win);
-waitForKey(keyspace);
+PTB_waitForKey(keyspace);
 
 
 res.data(3).session = 'tap2'; 
@@ -294,7 +317,8 @@ for triali=1:length(trial_order_tap2)
     s_out = zeros(dev_n_channels, length(s)); 
     s_out(1,:) = s; 
     s_out(2,:) = s; 
-    
+    s_out(5,:) = s; 
+
     PsychPortAudio('FillBuffer',pahandle,s_out);
     WaitSecs(rand(1)+1);  % wait 1-2 sec
 
@@ -305,21 +329,23 @@ for triali=1:length(trial_order_tap2)
     PsychPortAudio('Stop',pahandle,1); %actualStartTime is the same as returned by Start command in WaitForStart mode
 
     % SAVE tapping as audiofile
-    tapata = PsychPortAudio('GetAudioData', pahandle); 
-    tapdata = tapdata(1,:); 
+    tapdata = PsychPortAudio('GetAudioData', pahandle); 
+    tapdata = tapdata(1:2,:); 
     file_name_tap = fullfile(log_path, sprintf('%s_tappingSession2_ID%d_%s_%s_trial%d.wav', experiment, SUBJECT, date_time, s_name, triali)); 
-    audiowrite(file_name_tap, tapData', fs); 
+    audiowrite(file_name_tap, tapdata', params_stim.fs); 
 
     % SAVE tapping as matfile
-    res.data(3).trial(triali).stimulus = stimuli(trial_order_tap2(triali));
-    res.data(3).trial(triali).response = tapdata;
+    res.data(3).trial(triali).stimulus = resample(tapdata(2,:),P,Q);
+    res.data(3).trial(triali).response = resample(tapdata(1,:),P,Q);
+    res.data(3).trial(triali).fs = params_stim.fs_ds; 
+    res.data(3).trial(triali).condition = s_name; 
 
     % DISPLAY message
     if triali<length(trial_order_tap2)
         to_disp = sprintf('Take a break...\n\nPress SPACE to continue...');
         DrawFormattedText(win,to_disp,'center','center',col_text);
         Screen('Flip',win);
-        waitForKey(keyspace);
+        PTB_waitForKey(keyspace);
     end
     
 end
@@ -353,10 +379,11 @@ res.experiment = experiment;
 res.paramsExp = params_exp;
 res.paramsStim = params_stim;
 res.timeStamp = date_time; 
-res.script = mfilename; 
+res.trialOrderType = trial_order_type; 
+res.volume = target_vol; 
+res.volUD = UD; 
 
 c = clock; %Current date and time as date vector. [year month day hour minute seconds]
-
 baseName=['log_', experiment,'_ID',num2str(SUBJECT) '_' num2str(c(2)) '.' num2str(c(3)) '.' num2str(c(1)) '.' num2str(c(4)) num2str(c(5)) '.mat']; %makes unique filename
 save([log_path,filesep,baseName],'res');
 
