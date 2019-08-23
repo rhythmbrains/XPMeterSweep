@@ -154,7 +154,7 @@ s_4incr3decr = s .* env_4incr3decr;
 
 
 f = figure('color', 'white', 'Position', [1924 1376 1050 203]); 
-ax = axes; 
+ax = subplot(2,1,1); 
 h = plot(t,s.*env0); 
 hold on
 h = plot(t,s.*env4_incr); 
@@ -163,8 +163,14 @@ box off
 ax.XColor = 'none'; 
 ax.YColor = 'none'; 
 
-% figure('Position', [1924 1376 1050 203])
-% plot(s_3decr4incr)
+ax = subplot(2,1,2); 
+h = plot(t,s.*flip(env0)); 
+hold on
+h = plot(t,s.*flip(env4_incr)); 
+h = plot(t,s.*flip(env3_decr)); 
+box off
+ax.XColor = 'none'; 
+ax.YColor = 'none'; 
 
 
 
