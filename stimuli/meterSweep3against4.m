@@ -50,15 +50,6 @@ params.freq_res_per_step = 1/(params.n_cycles_per_step*length(pulse0)*params.IOI
 disp(sprintf('\nWith current parameters, you get frequency resolution of %.3f Hz \n', params.freq_res_per_step))
 
 
-n_frex = 5; 
-frex3 = 1/(params.IOI*3) * [1:n_frex]; 
-frex4 = 1/(params.IOI*4) * [1:n_frex]; 
-N = round(params.n_cycles_per_step*dur_pattern*params.fs); 
-frex3idx = round(frex3/params.fs*N)+1; 
-frex4idx = round(frex4/params.fs*N)+1; 
-freq = [0:N-1]/N*params.fs; 
-
-
 %---------------------------------------------------------------------
 
 % % dB scale
@@ -191,94 +182,147 @@ save('./out/XPMeterSweep_4against3.mat', ...
 
 
 
-%%
+%% PLOT
 
 
 % fprintf('\n--------------------------------------\n')
 % for stepi=1:params.n_steps
 %     idx = round((stepi-1)*params.IOI*length(pulse4)*params.n_cycles_per_step*params.fs); 
-%     fprintf('step %d\trms = %f\tpower = %f\n', stepi, rms(s_3decr4incr(idx+1:idx+round(params.IOI*length(pulse4)*params.n_cycles_per_step*params.fs))), rms(s_3decr4incr(idx+1:idx+round(params.IOI*length(pulse4)*params.n_cycles_per_step*params.fs)))^2)
+%     fprintf('step %d\trms = %f\tpower = %f\n', stepi, rms(s_4incr3decr(idx+1:idx+round(params.IOI*length(pulse4)*params.n_cycles_per_step*params.fs))), rms(s_4incr3decr(idx+1:idx+round(params.IOI*length(pulse4)*params.n_cycles_per_step*params.fs)))^2)
 % end
 % fprintf('--------------------------------------\n')
-% fprintf('Whole trial duration: %.1f sec\n',length(s_3decr4incr)/params.fs)
+% fprintf('Whole trial duration: %.1f sec\n',length(s_4incr3decr)/params.fs)
 % fprintf('--------------------------------------\n')
 
 
 
-% 
-% mean_amp3_3incr4decr = zeros(1,params.n_steps); 
-% mean_amp4_3incr4decr = zeros(1,params.n_steps); 
-% mean_z3_3incr4decr = zeros(1,params.n_steps); 
-% mean_z4_3incr4decr = zeros(1,params.n_steps); 
-% 
-% mean_amp3_3decr4incr = zeros(1,params.n_steps); 
-% mean_amp4_3decr4incr = zeros(1,params.n_steps); 
-% mean_z3_3decr4incr = zeros(1,params.n_steps); 
-% mean_z4_3decr4incr = zeros(1,params.n_steps); 
-% 
-% c_cycle = [1,0]; % [which cycle to start at, how many cycles to take from there] 
-% for stepi=1:params.n_steps
-%     
-%     if stepi==1 | stepi==params.n_steps
-%         c_cycle(2) = params.n_cycles_isochr; 
-%     end
-%     idx = round((c_cycle(1)-1)*params.IOI*length(pulse3)*params.fs); 
-% 
-%     %------- 4 incr 3 decr -------
-%     x3decr4incr = env_3decr4incr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
-%     mX3decr4incr = abs(fft(x3decr4incr)); 
-%     
-%     amps3decr4incr = mX3decr4incr([frex3idx,frex4idx]); 
-%     z3decr4incr = zscore(amps3decr4incr); 
-%     mean_amp3_3decr4incr(stepi) = mean(amps3decr4incr(1:n_frex)); 
-%     mean_amp4_3decr4incr(stepi) = mean(amps3decr4incr(n_frex+1:end)); 
-%     mean_z3_3decr4incr(stepi) = mean(z3decr4incr(1:n_frex)); 
-%     mean_z4_3decr4incr(stepi) = mean(z3decr4incr(n_frex+1:end)); 
-%     
-%     %------- 3 incr 4 decr -------
-%     x3incr4decr = env_3incr4decr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
-%     mX3incr4decr = abs(fft(x3incr4decr)); 
-% 
-%     amps3incr4decr = mX3incr4decr([frex3idx,frex4idx]); 
-%     z3incr4decr = zscore(amps3incr4decr); 
-%     mean_amp3_3incr4decr(stepi) = mean(amps3incr4decr(1:n_frex)); 
-%     mean_amp4_3incr4decr(stepi) = mean(amps3incr4decr(n_frex+1:end)); 
-%     mean_z3_3incr4decr(stepi) = mean(z3incr4decr(1:n_frex)); 
-%     mean_z4_3incr4decr(stepi) = mean(z3incr4decr(n_frex+1:end)); 
-%     
-%     
-%     %------- plot -------
-%     figure; 
-%     subplot 211
-%     plot(x3decr4incr)
-%     subplot 212
-%     freq = [0 : length(mX3decr4incr)-1]/length(mX3decr4incr)*params.fs; 
-%     stem(freq,mX3decr4incr)
-%     xlim([0,7])
-%     
-%     c_cycle = [c_cycle(1)+c_cycle(2), params.n_cycles_per_step]; 
-% end
-% 
-% 
-% 
-% 
-% 
-% 
-% f = figure('color','white','Position', [2066 1063 285 141]); 
-% ax = axes; 
-% plot(mean_amp3_3incr4decr, 'b-o', 'MarkerFaceColor','b'); 
-% hold on
-% plot(flip(mean_amp3_3decr4incr), 'r-o', 'MarkerFaceColor','r')
-% box off
-% xlim([1,params.n_steps])
-% set(gca,'xtick',[1:params.n_steps],'ytick',[],'fontsize',16)
-% ax.YAxis.Visible = 'off'; 
-% ylabel('mean_amp3')
-% 
-% 
-% 
-% %%
-% 
+n_frex = 5; 
+frex3 = 1/(params.IOI*4) * [1:n_frex]; 
+frex4 = 1/(params.IOI*3) * [1:n_frex]; 
+frex2remove = intersect(frex3,frex4); 
+frex3(frex3==frex2remove) = []; 
+frex4(frex4==frex2remove) = []; 
+
+N = round(params.n_cycles_per_step*dur_pattern*params.fs); 
+frex3idx = round(frex3/params.fs*N)+1; 
+frex4idx = round(frex4/params.fs*N)+1; 
+idx_maxHz = round(12/params.fs*N)+1; 
+freq = [0:N-1]/N*params.fs; 
+
+
+ 
+sum_amp3_4decr3incr = zeros(1,params.n_steps); 
+sum_amp4_4decr3incr = zeros(1,params.n_steps); 
+sum_z3_4decr3incr = zeros(1,params.n_steps); 
+sum_z4_4decr3incr = zeros(1,params.n_steps); 
+
+sum_amp3_4incr3decr = zeros(1,params.n_steps); 
+sum_amp4_4incr3decr = zeros(1,params.n_steps); 
+sum_z3_4incr3decr = zeros(1,params.n_steps); 
+sum_z4_4incr3decr = zeros(1,params.n_steps); 
+
+
+f = figure('position',[242 780 1629 251],'color','white'); 
+p = panel(f); 
+p.pack('h',params.n_steps); 
+
+c_cycle = [1,0]; % [which cycle to start at, how many cycles to take from there] 
+for stepi=1:params.n_steps
+    
+    if stepi==1 | stepi==params.n_steps
+        c_cycle(2) = params.n_cycles_isochr; 
+    end
+    idx = round((c_cycle(1)-1)*params.IOI*length(pulse3)*params.fs); 
+
+    %------- 4 incr 3 decr -------
+    x4decr3incr = env_4decr3incr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
+    mX4decr3incr = abs(fft(x4decr3incr)); 
+    
+    amps4decr3incr = mX4decr3incr([frex3idx,frex4idx]); 
+    z4decr3incr = zscore(amps4decr3incr); 
+    sum_amp3_4decr3incr(stepi) = sum(amps4decr3incr(1:n_frex)); 
+    sum_amp4_4decr3incr(stepi) = sum(amps4decr3incr(n_frex+1:end)); 
+    sum_z3_4decr3incr(stepi) = sum(z4decr3incr(1:n_frex)); 
+    sum_z4_4decr3incr(stepi) = sum(z4decr3incr(n_frex+1:end)); 
+    
+    %------- 3 incr 4 decr -------
+    x4incr3decr = env_4incr3decr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
+    mX4incr3decr = abs(fft(x4incr3decr)); 
+
+    amps4incr3decr = mX4incr3decr([frex3idx,frex4idx]); 
+    z4incr3decr = zscore(amps4incr3decr); 
+    sum_amp3_4incr3decr(stepi) = sum(amps4incr3decr(1:n_frex)); 
+    sum_amp4_4incr3decr(stepi) = sum(amps4incr3decr(n_frex+1:end)); 
+    sum_z3_4incr3decr(stepi) = sum(z4incr3decr(1:n_frex)); 
+    sum_z4_4incr3decr(stepi) = sum(z4incr3decr(n_frex+1:end)); 
+    
+    
+    %------- plot -------
+    p(stepi).pack('v',2); 
+    p(stepi,1).select(); 
+    plot(x4decr3incr)
+    xlabel('time (s)')
+    box off
+    p(stepi,2).select(); 
+    freq = [0 : idx_maxHz-1]/length(mX4decr3incr)*params.fs; 
+    h = plot([freq;freq],[zeros(1,idx_maxHz);mX4decr3incr(1:idx_maxHz)],'k','linewidth',1.5); 
+    for fi=1:length(frex3idx); h(frex3idx(fi)).Color = [0 0 1]; end; 
+    for fi=1:length(frex4idx); h(frex4idx(fi)).Color = [1 0 0]; end; 
+    xlabel('frequency (Hz)')
+    box off
+    xlim([0,10])
+    
+    c_cycle = [c_cycle(1)+c_cycle(2), params.n_cycles_per_step]; 
+end
+
+saveas(f,'./figures/specta.fig'); 
+saveas(f,'./figures/specta.tiff'); 
+close(f); 
+
+
+
+%----------------------------------------------------------
+f = figure('color','white','Position', [2066 1063 285 141]); 
+ax = axes; 
+plot(sum_amp3_4decr3incr, 'b-o', 'MarkerFaceColor','b'); 
+hold on
+plot(flip(sum_amp3_4incr3decr), 'r-o', 'MarkerFaceColor','r')
+box off
+xlim([1,params.n_steps])
+set(gca,'xtick',[1:params.n_steps],'ytick',[],'fontsize',16)
+ax.YAxis.Visible = 'off'; 
+title('summed 3pulse amplitudes')
+l = legend({'4decr3incr','4incr3decr(flip)'}); 
+l.FontSize = 10; 
+l.Position = [0.0684 0.5496 0.3456 0.2376]; 
+
+saveas(f,'./figures/3pulse_sumAmp.fig'); 
+saveas(f,'./figures/3pulse_sumAmp.tiff'); 
+close(f); 
+
+
+
+f = figure('color','white','Position', [2066 1063 285 141]); 
+ax = axes; 
+plot(sum_amp4_4decr3incr, 'b-o', 'MarkerFaceColor','b'); 
+hold on
+plot(flip(sum_amp4_4incr3decr), 'r-o', 'MarkerFaceColor','r')
+box off
+xlim([1,params.n_steps])
+set(gca,'xtick',[1:params.n_steps],'ytick',[],'fontsize',16)
+ax.YAxis.Visible = 'off'; 
+title('summed 4pulse amplitudes')
+l = legend({'4decr3incr','4incr3decr(flip)'}); 
+l.FontSize = 10; 
+l.Position = [0.5508 0.5567 0.3772 0.2376]; 
+
+saveas(f,'./figures/4pulse_sumAmp.fig'); 
+saveas(f,'./figures/4pulse_sumAmp.tiff'); 
+close(f); 
+
+
+%%
+
 
 
 
