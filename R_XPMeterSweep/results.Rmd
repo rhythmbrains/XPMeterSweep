@@ -1,0 +1,72 @@
+---
+title: "XPSyncSweep results (everything)"
+author: "Tomas Lenc"
+date: '`r format(Sys.Date(),"%B %d %Y")`'
+output: 
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_float: 
+      collapsed: false
+---
+
+<script>
+$(document).ready(function() {
+  $items = $('div#TOC li');
+  $items.each(function(idx) {
+    num_ul = $(this).parentsUntil('#TOC').length;
+    $(this).css({'text-indent': num_ul * 10, 'padding-left': 0});
+  });
+
+});
+</script>
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center')
+source('analysis.R')
+```
+
+
+
+
+
+
+
+&nbsp;  
+&nbsp;  
+_______________________________________________________________________________________________________________________________________
+
+#Introduction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

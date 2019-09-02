@@ -1,0 +1,28 @@
+library(ggplot2)
+library(ggsignif)
+library(reshape2)
+library(ez)
+library(plyr)
+library(dplyr)
+library(doBy)
+library(car)
+library(visreg)
+library(lme4)
+library(BayesFactor)
+library(lmerTest)
+library(pbkrtest)
+library(multcomp)
+library(emmeans)
+library(cowplot)
+library(grid) # ggplot_build -> [change shit] -> ggplot_gtable -> grid.newpage -> grid.draw (plot the changed ggplot after extracting ggplot_build and converting to grob) 
+library(lemon)
+library(plotly)
+library(scales) # used to squish the colorbar gradient values of topoplot
+library(gtools)
+
+library(pander)
+# panderOptions('digits', 10)
+# panderOptions('round', 3)
+# panderOptions('keep.trailing.zeros', FALSE)
+# 
+
