@@ -236,25 +236,29 @@ for stepi=1:params.n_steps
 
     %------- 4 incr 3 decr -------
     x4decr3incr = env_4decr3incr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
-    mX4decr3incr = abs(fft(x4decr3incr)); 
+    mX4decr3incr = 2*abs(fft(x4decr3incr))/N; 
     
-    amps4decr3incr = mX4decr3incr([frex3idx,frex4idx]); 
-    z4decr3incr = zscore(amps4decr3incr); 
-    sum_amp3_4decr3incr(stepi) = sum(amps4decr3incr(1:n_frex)); 
-    sum_amp4_4decr3incr(stepi) = sum(amps4decr3incr(n_frex+1:end)); 
-    sum_z3_4decr3incr(stepi) = sum(z4decr3incr(1:n_frex)); 
-    sum_z4_4decr3incr(stepi) = sum(z4decr3incr(n_frex+1:end)); 
+    amps3 = mX4decr3incr(frex3idx); 
+    amps4 = mX4decr3incr(frex4idx); 
+    sum_amp3_4decr3incr(stepi) = sum(amps3); 
+    sum_amp4_4decr3incr(stepi) = sum(amps4); 
+    
+    z4decr3incr = zscore([amps3,amps4]); 
+    mean_z3_4decr3incr(stepi) = mean(z4decr3incr(1:length(amps3))); 
+    mean_z4_4decr3incr(stepi) = mean(z4decr3incr(length(amps3)+1:end)); 
     
     %------- 3 incr 4 decr -------
     x4incr3decr = env_4incr3decr(idx+1:idx+round(params.IOI*length(pulse4)*c_cycle(2)*params.fs)); 
-    mX4incr3decr = abs(fft(x4incr3decr)); 
+    mX4incr3decr = 2*abs(fft(x4incr3decr))/N; 
 
-    amps4incr3decr = mX4incr3decr([frex3idx,frex4idx]); 
-    z4incr3decr = zscore(amps4incr3decr); 
-    sum_amp3_4incr3decr(stepi) = sum(amps4incr3decr(1:n_frex)); 
-    sum_amp4_4incr3decr(stepi) = sum(amps4incr3decr(n_frex+1:end)); 
-    sum_z3_4incr3decr(stepi) = sum(z4incr3decr(1:n_frex)); 
-    sum_z4_4incr3decr(stepi) = sum(z4incr3decr(n_frex+1:end)); 
+    amps3 = mX4incr3decr(frex3idx); 
+    amps4 = mX4incr3decr(frex4idx); 
+    sum_amp3_4incr3decr(stepi) = sum(amps3); 
+    sum_amp4_4incr3decr(stepi) = sum(amps4); 
+
+    z4incr3decr = zscore([amps3,amps4]);
+    mean_z3_4incr3decr(stepi) = mean(z4incr3decr(1:length(amps3))); 
+    mean_z4_4incr3decr(stepi) = mean(z4incr3decr(length(amps3)+1:end)); 
     
     
     %------- plot -------

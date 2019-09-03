@@ -60,3 +60,4 @@ vignettes/*.pdf
 # # archive folder
 *_archive/
 #
+.Rproj.user
